@@ -15,25 +15,25 @@ def move_file(command: str) -> None:
     except FileNotFoundError:
         return
 
-    if "/" in destination:
+    if destination.endswith("/"):
+        directories = [dir_name for dir_name
+                       in destination.split("/") if dir_name]
+        destination_file = os.path.join(*directories, os.path.basename(source))
+    elif "/" in destination:
         path_elements = destination.split("/")
-
-        if destination.endswith("/"):
-            directories = [dir_name for dir_name in path_elements if dir_name]
-            destination_file = "/".join(directories) + "/" + source
-        else:
-            directories = path_elements[:-1]
-            destination_file = destination
-
-        current_path = ""
-        for directory in directories:
-            current_path = current_path + directory + "/"
-            try:
-                os.mkdir(current_path)
-            except FileExistsError:
-                pass
+        directories = path_elements[:-1]
+        destination_file = os.path.join(*path_elements)
     else:
+        directories = []
         destination_file = destination
+
+    current_path = ""
+    for directory in directories:
+        current_path = os.path.join(current_path, directory)
+        try:
+            os.mkdir(current_path)
+        except FileExistsError:
+            pass
 
     with open(destination_file, "w", encoding="utf-8") as dst:
         dst.write(content)
