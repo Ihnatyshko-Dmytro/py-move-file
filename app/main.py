@@ -7,23 +7,35 @@ def move_file(command: str) -> None:
     if len(parts) != 3 or parts[0] != "mv" or parts[1] == parts[2]:
         return
 
-    source, destination = parts[1], parts[2]
+    _, source, destination = parts
 
-    if not os.path.exists(source):
+    try:
+        with open(source, "r", encoding="utf-8") as src:
+            content = src.read()
+    except FileNotFoundError:
         return
 
-    if destination.endswith("/"):
-        destination_dir = destination
-        destination_file = os.path.join(destination, os.path.basename(source))
+    if "/" in destination:
+        path_elements = destination.split("/")
+
+        if destination.endswith("/"):
+            directories = [dir_name for dir_name in path_elements if dir_name]
+            destination_file = "/".join(directories) + "/" + source
+        else:
+            directories = path_elements[:-1]
+            destination_file = destination
+
+        current_path = ""
+        for directory in directories:
+            current_path = current_path + directory + "/"
+            try:
+                os.mkdir(current_path)
+            except FileExistsError:
+                pass
     else:
-        destination_dir = os.path.dirname(destination)
         destination_file = destination
 
-    if destination_dir:
-        os.makedirs(destination_dir, exist_ok=True)
+    with open(destination_file, "w", encoding="utf-8") as dst:
+        dst.write(content)
 
-    with open(source, "r", encoding="utf-8") as src, open(
-        destination_file, "w", encoding="utf-8"
-    ) as dst:
-        dst.write(src.read())
     os.remove(source)
